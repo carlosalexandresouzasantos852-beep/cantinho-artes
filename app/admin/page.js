@@ -6,7 +6,22 @@
 
 'use client';
 
-import Script from 'next/script';
+import { useEffect } from 'react';
+
+function carregarScript(src) {
+  return new Promise((resolve, reject) => {
+    // Evitar carregar duas vezes
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
 
 const corpoHtml = `
 <!-- ===================== TELA DE LOGIN ===================== -->
@@ -30,7 +45,7 @@ const corpoHtml = `
     </form>
 
     <div class="dica-login">
-      🔑 Use o usuário e senha cadastrados no banco de dados (padrão inicial: <strong>admin</strong> / <strong>cantinho123</strong> — troque assim que possível).
+      🔑 Entre com o usuário e senha cadastrados no banco de dados.
     </div>
     <a href="/" style="display:block; margin-top:16px; font-size:0.8rem; color:var(--texto-suave);">← Voltar para a loja</a>
   </div>
@@ -406,12 +421,17 @@ const corpoHtml = `
 `;
 
 export default function PaginaAdmin() {
+  useEffect(() => {
+    // Carrega banco.js primeiro, depois admin.js (ordem importa)
+    carregarScript('/js/banco.js')
+      .then(() => carregarScript('/js/admin.js'))
+      .catch((err) => console.error('Erro ao carregar scripts:', err));
+  }, []);
+
   return (
     <>
       <link rel="stylesheet" href="/css/admin.css" />
       <div dangerouslySetInnerHTML={{ __html: corpoHtml }} />
-      <Script src="/js/banco.js" strategy="afterInteractive" />
-      <Script src="/js/admin.js" strategy="afterInteractive" />
     </>
   );
 }
